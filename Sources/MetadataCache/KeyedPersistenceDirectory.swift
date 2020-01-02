@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import CryptoKit
 import CommonCrypto
 
 struct KeyedPersistenceDirectory {
@@ -53,26 +52,19 @@ struct KeyedPersistenceDirectory {
     
     @inlinable
     internal static func md5Hash(for string: String) -> String {
-        if #available(iOS 13.0, macOS 10.15, *) {
-            var md5 = Insecure.MD5()
-            md5.update(data: string.data(using: .utf8)!)
-            let digist = md5.finalize()
-            return digist.map({ String(format: "%02hhx", $0) }).joined()
-        } else {
-            let length = Int(CC_MD5_DIGEST_LENGTH)
-            let messageData = string.data(using:.utf8)!
-            var digestData = Data(count: length)
-            _ = digestData.withUnsafeMutableBytes { digestBytes -> UInt8 in
-                messageData.withUnsafeBytes { messageBytes -> UInt8 in
-                    if let messageBytesBaseAddress = messageBytes.baseAddress, let digestBytesBlindMemory = digestBytes.bindMemory(to: UInt8.self).baseAddress {
-                        let messageLength = CC_LONG(messageData.count)
-                        CC_MD5(messageBytesBaseAddress, messageLength, digestBytesBlindMemory)
-                    }
-                    return 0
+        let length = Int(CC_MD5_DIGEST_LENGTH)
+        let messageData = string.data(using:.utf8)!
+        var digestData = Data(count: length)
+        _ = digestData.withUnsafeMutableBytes { digestBytes -> UInt8 in
+            messageData.withUnsafeBytes { messageBytes -> UInt8 in
+                if let messageBytesBaseAddress = messageBytes.baseAddress, let digestBytesBlindMemory = digestBytes.bindMemory(to: UInt8.self).baseAddress {
+                    let messageLength = CC_LONG(messageData.count)
+                    CC_MD5(messageBytesBaseAddress, messageLength, digestBytesBlindMemory)
                 }
+                return 0
             }
-            return digestData.map({ String(format: "%02hhx", $0) }).joined()
         }
+        return digestData.map({ String(format: "%02hhx", $0) }).joined()
     }
 
 
