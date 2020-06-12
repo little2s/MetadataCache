@@ -40,8 +40,23 @@ struct KeyedPersistenceDirectory {
     }
     
     func save(data: Data, for key: String) throws {
+        try createDirectoryIfNeeed()
         let url = self.fileURL(for: key)
         try data.write(to: url, options: .atomic)
+    }
+    
+    private func createDirectoryIfNeeed() throws {
+        var isDirectory: ObjCBool = false
+        if self.fileManager.fileExists(atPath: self.url.path, isDirectory: &isDirectory) && isDirectory.boolValue {
+            
+        } else {
+            try? self.fileManager.removeItem(at: self.url)
+            #if os(iOS)
+            try self.fileManager.createDirectory(at: self.url, withIntermediateDirectories: true, attributes: [FileAttributeKey.protectionKey: FileProtectionType.none])
+            #else
+            try self.fileManager.createDirectory(at: self.url, withIntermediateDirectories: true, attributes: nil)
+            #endif
+        }
     }
     
     func clear() {
